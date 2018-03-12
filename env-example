@@ -1,0 +1,6 @@
+NODE_SERVER=true
+BACKEND_URL=http://localhost
+UGLIFY_JS=true
+MOCK_BACKEND=false
+KARMA_CHROME=false
+APP_LANGUAGES=en,ar
