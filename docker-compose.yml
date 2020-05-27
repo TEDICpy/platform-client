@@ -1,16 +1,7 @@
-version: '3'
-
+version: "2"
 services:
-  web:
+  app:
     build: .
-    #restart: unless-stopped
-    networks:
-      - ushahidiplatform_default
-    ports:
-      - "8080:8080"
     env_file: .env
-
-networks:
-  ushahidiplatform_default:
-    external: true
-
+    ports:
+      - "7070:8080"
