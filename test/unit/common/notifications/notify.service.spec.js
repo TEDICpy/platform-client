@@ -17,6 +17,10 @@ describe('Notify', function () {
         getState: function () {
             return this.state;
         }
+    },
+    mockDemoSliderService = {
+        openTemplate: function () {},
+        close: function () {}
     };
 
     beforeEach(function () {
@@ -30,6 +34,9 @@ describe('Notify', function () {
         })
         .service('ModalService', function () {
             return mockModalService;
+        })
+        .service('DemoSliderService', function () {
+            return mockDemoSliderService;
         })
         // Inject some dummy translations
         .config(function ($translateProvider) {
@@ -195,6 +202,21 @@ describe('Notify', function () {
             mockModalService.state = false;
         });
     });
+
+    describe('deleteWithInput', function () {
+        beforeEach(function () {
+            spyOn(mockModalService, 'openTemplate').and.callThrough();
+            spyOn(mockSliderService, 'openTemplate').and.callThrough();
+        });
+
+        it('Calls ModalService.openTemplate with error message', function () {
+            mockModalService.state = false;
+            Notify.deleteWithInput('survey', 'this is the name of the survey');
+            $rootScope.$digest();
+            expect(mockModalService.openTemplate).toHaveBeenCalled();
+        });
+    });
+
 
     describe('limit', function () {
         beforeEach(function () {

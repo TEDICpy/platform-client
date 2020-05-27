@@ -21,11 +21,12 @@
         <strong class="label" ng-show="post.user && !post.author_realname">{{ post.user.realname }}</strong>
         <strong class="label" ng-show="post.contact && !post.author_realname">{{ post.contact.contact}}</strong>
         <strong class="label" ng-show="post.author_realname">{{ post.author_realname}}</strong>
+        <strong class="label" ng-show="!post.author_realname && !post.contact && !post.user" translate="app.anonymous">Anonymous</strong>
 
     </li>
     <li class="tooltip">
         <span class="label">{{timeago}}</span>
-        <span class="bug" title="{{ displayTimeFull }}">{{ displayTime }}</span>
+        <span class="bug tooltip-visible-el" aria-label="Post added {{ displayTimeFull }}" role="tooltip" title="{{ displayTimeFull }}">{{ displayTimeFull }}</span>
 
     </li>
     <li>

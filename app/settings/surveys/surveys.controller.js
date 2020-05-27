@@ -8,6 +8,7 @@ module.exports = [
     'FormStageEndpoint',
     'Notify',
     '_',
+    'Features',
 function (
     $scope,
     $rootScope,
@@ -17,7 +18,8 @@ function (
     FormEndpoint,
     FormStageEndpoint,
     Notify,
-    _
+    _,
+    Features
 ) {
 
     // Change layout class
@@ -34,6 +36,11 @@ function (
     // Change mode
     $scope.$emit('event:mode:change', 'settings');
 
+    Features.loadFeatures()
+    .then(function () {
+        $scope.targetedSurveysEnabled = Features.isFeatureEnabled('targeted-surveys');
+    });
+
     // Get all the forms for display
     $scope.refreshForms = function () {
         FormEndpoint.queryFresh().$promise.then(function (response) {
@@ -42,7 +49,7 @@ function (
     };
 
     $scope.deleteSurvey = function (survey) {
-        Notify.confirmDelete('notify.form.delete_form_confirm', 'notify.form.delete_form_confirm_desc').then(function () {
+        Notify.deleteWithInput('survey', survey.name).then(function () {
             // If we haven't saved the survey
             // just go back to the surveys views
             if (!survey.id) {

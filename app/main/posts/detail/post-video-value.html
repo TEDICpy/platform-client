@@ -1,8 +1,8 @@
 <div class="postcard-field">
   <h2 class="form-label">
-    {{label}}
+    <bdi>{{label}}</bdi>
   </h2>
-  <div class="video_embed-fluid">
+  <div class="video_embed-fluid" ng-if="videoUrl">
     <iframe src="{{videoUrl}}" frameborder="0" allowfullscreen></iframe>
   </div>
 </div>

@@ -6,7 +6,8 @@ describe('authentication interceptor', function () {
         $http,
         CONST,
         mockedSessionData,
-        mockAuthentication;
+        mockAuthentication,
+        mockedDemoDeploymentService;
 
     beforeEach(function () {
         var testApp = makeTestApp()
@@ -23,6 +24,11 @@ describe('authentication interceptor', function () {
             getLoginStatus : function () {
                 return this.loginStatus;
             }
+        };
+
+        mockedDemoDeploymentService =
+        {
+            demoCheck: function () {}
         };
         testApp.service('Session', function () {
             return {
@@ -42,6 +48,9 @@ describe('authentication interceptor', function () {
         })
         .service('Authentication', function () {
             return mockAuthentication;
+        })
+        .service('DemoDeploymentService', function () {
+            return mockedDemoDeploymentService;
         })
         .config(require('app/common/auth/authentication-interceptor.config.js'));
 
@@ -76,7 +85,11 @@ describe('authentication interceptor', function () {
                 it('should add the authorization token header', function () {
 
                     $httpBackend.expectGET(CONST.API_URL + '/test-endpoint',
-                        {'Accept': 'application/json, text/plain, */*', 'Authorization': 'Bearer fooBarToken'}
+                        {
+                            'Accept': 'application/json, text/plain, */*',
+                            'Authorization': 'Bearer fooBarToken',
+                            'Accept-Language': 'en-US'
+                        }
                     ).respond(200);
 
                     $http.get(CONST.API_URL + '/test-endpoint');
@@ -112,7 +125,10 @@ describe('authentication interceptor', function () {
 
                 it('should send the request without an authorization header', function () {
                     $httpBackend.expectGET(CONST.API_URL + '/test-endpoint',
-                        {'Accept': 'application/json, text/plain, */*'}
+                        {
+                            'Accept': 'application/json, text/plain, */*',
+                            'Accept-Language': 'en-US'
+                        }
                     ).respond(200);
 
                     $http.get(CONST.API_URL + '/test-endpoint');
@@ -125,7 +141,10 @@ describe('authentication interceptor', function () {
                     'via client_credentials flow and then ' +
                     'add the authorization token header', function () {
                     $httpBackend.expectGET(CONST.API_URL + '/test-endpoint',
-                        {'Accept': 'application/json, text/plain, */*'}
+                        {
+                            'Accept': 'application/json, text/plain, */*',
+                            'Accept-Language': 'en-US'
+                        }
                     ).respond(401);
 
                     $httpBackend.expectPOST(CONST.BACKEND_URL + '/oauth/token',
@@ -135,8 +154,11 @@ describe('authentication interceptor', function () {
                     });
 
                     $httpBackend.expectGET(CONST.API_URL + '/test-endpoint',
-                        {'Accept': 'application/json, text/plain, */*',
-                        'Authorization': 'Bearer someOtherFooBarToken'}
+                        {
+                            'Accept': 'application/json, text/plain, */*',
+                            'Authorization': 'Bearer someOtherFooBarToken',
+                            'Accept-Language': 'en-US'
+                        }
                     ).respond(200);
 
                     $http.get(CONST.API_URL + '/test-endpoint');
@@ -147,7 +169,10 @@ describe('authentication interceptor', function () {
                 it('should send the request without an authorization header ' +
                     'and ignore failures if ignore403 is set', function () {
                     $httpBackend.expectGET(CONST.API_URL + '/test-endpoint',
-                        {'Accept': 'application/json, text/plain, */*'}
+                        {
+                            'Accept': 'application/json, text/plain, */*',
+                            'Accept-Language': 'en-US'
+                        }
                     ).respond(401);
 
                     $http.get(CONST.API_URL + '/test-endpoint', { params: { ignore403: true} }).then(angular.noop, angular.noop);
@@ -160,7 +185,10 @@ describe('authentication interceptor', function () {
         describe('for non-API requests', function () {
             it('should not add the authorization token header', function () {
                 $httpBackend.expectGET(CONST.BACKEND_URL + '/non-api-url',
-                    {'Accept': 'application/json, text/plain, */*'}
+                    {
+                        'Accept': 'application/json, text/plain, */*',
+                        'Accept-Language': 'en-US'
+                    }
                 ).respond(200);
 
                 $http.get(CONST.BACKEND_URL + '/non-api-url');
@@ -236,8 +264,11 @@ describe('authentication interceptor', function () {
 
                     // Then use that to load the original user
                     $httpBackend.expectGET(CONST.API_URL + '/some-url',
-                        {'Accept': 'application/json, text/plain, */*',
-                        'Authorization': 'Bearer anotherNewToken'}
+                        {
+                            'Accept': 'application/json, text/plain, */*',
+                            'Authorization': 'Bearer anotherNewToken',
+                            'Accept-Language': 'en-US'
+                        }
                     ).respond(200);
 
                     $httpBackend.flush();

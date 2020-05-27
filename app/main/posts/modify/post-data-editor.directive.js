@@ -80,11 +80,10 @@ function PostDataEditorController(
     $scope.deletePost = deletePost;
     $scope.canSavePost = canSavePost;
     $scope.savePost = savePost;
-    $scope.postTitleLabel = 'Title';
-    $scope.postDescriptionLabel = 'Description';
     $scope.tagKeys = [];
     $scope.save = $translate.instant('app.save');
     $scope.saving = $translate.instant('app.saving');
+    $scope.cancel = cancel;
     $scope.submit = $translate.instant('app.submit');
     $scope.submitting = $translate.instant('app.submitting');
     $scope.hasPermission = $rootScope.hasPermission('Manage Posts');
@@ -134,7 +133,6 @@ function PostDataEditorController(
              **/
             if ($scope.post.lock) {
                 PostLockEndpoint.unlock({
-                    id: $scope.post.lock.id,
                     post_id: $scope.post.id
                 }).$promise.then(resolve, reject);
             } else {
@@ -187,9 +185,7 @@ function PostDataEditorController(
         $scope.medias = {};
         $scope.savingText = $translate.instant('app.saving');
         $scope.submittingText = $translate.instant('app.submitting');
-        if ($scope.post.id) {
-            PostLockService.createSocketListener();
-        }
+
     }
 
     function setVisibleStage(stageId) {
@@ -234,7 +230,7 @@ function PostDataEditorController(
 
             var post = $scope.post;
             var tasks = _.sortBy(results[0], 'priority');
-            var attrs = _.chain(results[1])
+            var attributes = _.chain(results[1])
                 .sortBy('priority')
                 .value();
             var categories = results[2];
@@ -242,30 +238,10 @@ function PostDataEditorController(
             // Set Post Lock
             $scope.post.lock = results[3];
 
-            var attributes = [];
-            _.each(attrs, function (attr) {
-                if (attr.type === 'title' || attr.type === 'description') {
-                    if (attr.type === 'title') {
-                        $scope.postTitleLabel = attr.label;
-                        $scope.postTitleInstructions = attr.instructions;
-                    }
-                    if (attr.type === 'description') {
-                        $scope.postDescriptionLabel = attr.label;
-                        $scope.postDescriptionInstructions = attr.instructions;
-                    }
-                } else {
-                    attributes.push(attr);
-                }
-            });
-
             // Initialize values on post (helps avoid madness in the template)
             attributes.map(function (attr) {
                 // Create associated media entity
                 if (attr.input === 'upload') {
-                    var media = {};
-                    if ($scope.post.values[attr.key]) {
-                        media = $scope.post.values[attr.key][0];
-                    }
                     $scope.medias[attr.key] = {};
                 }
                 if (attr.input === 'tags') {
@@ -430,5 +406,9 @@ function PostDataEditorController(
 
             });
         });
+    }
+
+    function cancel() {
+        $state.go('posts.data.detail',{postId: $scope.post.id});
     }
 }

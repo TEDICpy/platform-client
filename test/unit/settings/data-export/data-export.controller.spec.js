@@ -7,7 +7,8 @@ describe('data-export-controller', function () {
         DataExport,
         Notify,
         FormEndpoint,
-        FormAttributeEndpoint;
+        FormAttributeEndpoint,
+        UserSettingsEndpoint;
 
     beforeEach(function () {
 
@@ -17,7 +18,7 @@ describe('data-export-controller', function () {
         angular.mock.module('testApp');
     });
 
-    beforeEach(angular.mock.inject(function (_$rootScope_, _$controller_, _$location_, _DataExport_, _Notify_, _FormEndpoint_, _FormAttributeEndpoint_, _) {
+    beforeEach(angular.mock.inject(function (_$rootScope_, _$controller_, _$location_, _DataExport_, _Notify_, _FormEndpoint_, _FormAttributeEndpoint_, _, _UserSettingsEndpoint_) {
         $rootScope = _$rootScope_;
         $controller = _$controller_;
         $location = _$location_;
@@ -25,10 +26,14 @@ describe('data-export-controller', function () {
         Notify = _Notify_;
         FormEndpoint = _FormEndpoint_;
         FormAttributeEndpoint = _FormAttributeEndpoint_;
+        UserSettingsEndpoint = _UserSettingsEndpoint_;
         $scope = _$rootScope_.$new();
 
         $rootScope.hasPermission = function () {
             return true;
+        };
+        $rootScope.currentUser = {
+            userId: 1
         };
     }));
 
@@ -49,7 +54,7 @@ describe('data-export-controller', function () {
         it('should initate data-export', function () {
             spyOn(DataExport, 'startExport');
             $scope.exportAll();
-            expect(DataExport.startExport).toHaveBeenCalledWith({});
+            expect(DataExport.startExport).toHaveBeenCalledWith({send_to_hdx: false, include_hxl: false, send_to_browser: true});
         });
         it('should show progress', function () {
             expect($scope.showProgress).toEqual(false);
@@ -82,15 +87,15 @@ describe('data-export-controller', function () {
     describe('exportSelected-function', function () {
         it('should notify user if no fields are selected', function () {
             $scope.selectedFields = [];
-            spyOn(Notify, 'exportNotifications');
+            spyOn(Notify, 'notifyAction');
             $scope.exportSelected();
-            expect(Notify.exportNotifications).toHaveBeenCalled();
+            expect(Notify.notifyAction).toHaveBeenCalled();
         });
         it('should call startExport with the selectedFields', function () {
             $scope.selectedFields = [1, 4, 7, 8, 10];
             spyOn(DataExport, 'startExport');
             $scope.exportSelected();
-            expect(DataExport.startExport).toHaveBeenCalledWith({attributes: $scope.selectedFields});
+            expect(DataExport.startExport).toHaveBeenCalledWith({fields: $scope.selectedFields, send_to_hdx: false, include_hxl: false, send_to_browser: true});
         });
     });
     describe('attachAttributes-function', function () {
@@ -109,19 +114,19 @@ describe('data-export-controller', function () {
             expect($scope.selectedFields[5]).toBeDefined();
         });
         it('should remove attributes from selectedFields if they are already there', function () {
-            $scope.selectedFields[5] = [1,3,5];
-            $scope.selectAll({id: 5, attributes: [{id: 1}, {id: 3}, {id: 5}]});
+            $scope.selectedFields[5] = ['key1', 'key3', 'key5'];
+            $scope.selectAll({id: 5, attributes: [{id: 1, key: 'key1'}, {id: 3, key: 'key3'}, {id: 5, key: 'key5'}]});
             expect($scope.selectedFields[5]).toEqual([]);
         });
         it('should add all attributes to selectedFields if only some are selected', function () {
-            $scope.selectedFields[5] = [1,3];
-            $scope.selectAll({id: 5, attributes: [{id: 1}, {id: 3}, {id: 5}]});
-            expect($scope.selectedFields[5]).toEqual([1, 3, 5]);
+            $scope.selectedFields[5] = ['key1', 'key3'];
+            $scope.selectAll({id: 5, attributes: [{id: 1, key: 'key1'}, {id: 3, key: 'key3'}, {id: 5, key: 'key5'}]});
+            expect($scope.selectedFields[5]).toEqual(['key1', 'key3', 'key5']);
         });
         it('should add all attributes to selectedFields if none is selected', function () {
             $scope.selectedFields[4] = [];
-            $scope.selectAll({id: 4, attributes: [{id: 1}, {id: 3}, {id: 5}]});
-            expect($scope.selectedFields[4]).toEqual([1, 3, 5]);
+            $scope.selectAll({id: 4, attributes: [{id: 1, key: 'key1'}, {id: 3, key: 'key3'}, {id: 5, key: 'key5'}]});
+            expect($scope.selectedFields[4]).toEqual(['key1', 'key3', 'key5']);
         });
     });
 });

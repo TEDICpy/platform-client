@@ -4,6 +4,8 @@ describe('global event handlers', function () {
         mockedSessionData,
         mockedAuthenticationData,
         mockedAuthenticationService,
+        mockedDemoDeploymentService,
+        verifierService,
         mockTOS,
         $rootScope,
         $location,
@@ -51,6 +53,15 @@ describe('global event handlers', function () {
             }
         };
 
+        mockedDemoDeploymentService =
+        {
+            demoCheck: function () {}
+        };
+        verifierService =
+        {
+            debugModeCheck: function () {}
+        };
+
         spyOn(mockedAuthenticationService, 'openLogin');
 
         mockTOS = {
@@ -76,9 +87,15 @@ describe('global event handlers', function () {
         .service('TermsOfService', function () {
             return mockTOS;
         })
+        .service('DemoDeploymentService', function () {
+            return mockedDemoDeploymentService;
+        })
         .run(require('app/common/auth/authentication-events.run.js'))
         .service('$state', function () {
             return mockState;
+        })
+        .service('VerifierService', function () {
+            return verifierService;
         });
 
 

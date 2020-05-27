@@ -8,6 +8,8 @@ module.exports = [
     'FormAttributeEndpoint',
     '_',
     'LoadingProgress',
+    'Features',
+    'UserSettingsEndpoint',
 function (
     $scope,
     $rootScope,
@@ -17,7 +19,9 @@ function (
     FormEndpoint,
     FormAttributeEndpoint,
     _,
-    LoadingProgress
+    LoadingProgress,
+    Features,
+    UserSettingsEndpoint
 ) {
     $scope.exportAll = exportAll;
     $scope.showFields = false;
@@ -33,19 +37,47 @@ function (
     $scope.loadExportJobs = loadExportJobs;
     $scope.switchTab = switchTab;
     $scope.exportJobs = [];
+    $scope.dataExportTitle =  'data_export.title';
+    $scope.loadingFeature = true;
 
     $rootScope.$on('event:export_job:stopped', function () {
         $scope.showProgress = false;
     });
+    $rootScope.$on('event:export_job:started', function () {
+        $scope.showProgress = true;
+    });
 
     // Redirect to home if not authorized
-    if ($rootScope.hasPermission('Bulk Data Import') === false) {
+    if ($rootScope.hasPermission('Bulk Data Import and Export') === false && $rootScope.hasPermission('Bulk Data Import') === false) {
         return $location.path('/');
     }
+
+    // Check if hxl-feature is enabled
+    Features.loadFeatures().then(function () {
+        $scope.hxlEnabled = Features.isFeatureEnabled('hxl');
+        if ($scope.hxlEnabled) {
+            $scope.dataExportTitle = 'data_export.title_hxl';
+            $scope.loadingFeature = false;
+        }
+    });
+
+    // Check if hxl-api-key is added
+    UserSettingsEndpoint.getFresh({id: $rootScope.currentUser.userId}).$promise.then((settings) => {
+        $scope.hxlApiKey = false;
+        _.each(settings.results, (setting) => {
+            if (setting.config_key === 'hdx_api_key') {
+                $scope.hxlApiKey = true;
+                $scope.loadingFeature = false;
+            }
+        });
+    });
+
     // Change layout class
     $rootScope.setLayout('layout-c');
     // Change mode
     $scope.$emit('event:mode:change', 'settings');
+
+
 
     activate();
 
@@ -81,19 +113,6 @@ function (
         angular.element(document.getElementById(tab_li)).addClass('active');
     }
 
-    function loadExportJobs() {
-        $scope.exportJobs = [];
-
-        DataExport.loadExportJobs().then(function (response) {
-            _.each(response, function (job) {
-                if (job.status !== 'done') {
-                    job.url_expiration = new Date(job.url_expiration * 1000).toLocaleString();
-                    job.created = new Date(job.created).toLocaleString();
-                    $scope.exportJobs.push(job);
-                }
-            });
-        });
-    }
 
     function attachAttributes() {
         // requesting attributes and attaches them to the correct form
@@ -114,35 +133,46 @@ function (
             $scope.selectedFields[form.id] = [];
         } else {
             _.each(form.attributes, function (attribute) {
-                if (!_.contains($scope.selectedFields[form.id], attribute.id)) {
-                    $scope.selectedFields[form.id].push(attribute.id);
+                if (!_.contains($scope.selectedFields[form.id], attribute.key)) {
+                    $scope.selectedFields[form.id].push(attribute.key);
                 }
             });
         }
     }
 
     function exportAll() {
-        DataExport.startExport({});
+        DataExport.startExport({send_to_hdx: false, include_hxl: false, send_to_browser: true});
         $scope.showProgress = true;
     }
 
     function exportSelected() {
-        var attributes = _.chain($scope.selectedFields)
+        var fields = _.chain($scope.selectedFields)
             .flatten() // concatinating attributes into one array
             .compact() // removing nulls
             .value(); // output
 
-        if (attributes.length === 0) {
+        if (fields.length === 0) {
             // displaying notification if no fields are selected
             var message =  '<p translate="data_export.no_fields"></p>';
-            Notify.exportNotifications(message, null, false, 'warning', 'error');
+            Notify.notifyAction(message, null, false, 'warning', 'error');
         } else {
-            DataExport.startExport({attributes: attributes});
+            DataExport.startExport({fields, send_to_hdx: false, include_hxl: false, send_to_browser: true});
             $scope.showFields = false;
             $scope.showProgress = true;
-
         }
     }
+
+    function loadExportJobs() {
+        DataExport.loadExportJobs().then(function (response) {
+            DataExport.setExportJobs(DataExport.processExportJobs(response));
+            $scope.exportJobs = DataExport.getExportJobs();
+        });
+    }
+
+    $scope.$on('exportJobs:updated', (event, data, newData) => {
+        $scope.exportJobs = DataExport.getExportJobs();
+    });
+
 
     // start fetching forms to display
     getForms();

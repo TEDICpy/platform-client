@@ -17,19 +17,18 @@ require('./common/wrapper/nvd3-wrapper');
 require('angular-nvd3/src/angular-nvd3');
 require('angular-cache');
 require('angular-linkify');
+require('ngtweet');
 
 // Load ushahidi modules
 require('./common/common-module.js');
 require('./main/main-module.js');
 require('./settings/settings.module.js');
+import ravenModule from './common/raven/raven';
 
 // Load platform-pattern-library CSS
 require('ushahidi-platform-pattern-library/assets/fonts/Lato/css/fonts.css');
 require('ushahidi-platform-pattern-library/assets/css/style.min.css');
 require('../sass/vendor.scss');
-
-// Stub ngRaven module incase its not configured
-angular.module('ngRaven', []);
 
 // Make sure we have a window.ushahidi object
 window.ushahidi = window.ushahidi || {};
@@ -37,12 +36,13 @@ window.ushahidi = window.ushahidi || {};
 // this 'environment variable' will be set within the gulpfile
 var backendUrl = window.ushahidi.backendUrl = (window.ushahidi.backendUrl || BACKEND_URL).replace(/\/$/, ''),
     intercomAppId = window.ushahidi.intercomAppId = window.ushahidi.intercomAppId || '',
+    ushDisableChecks = (window.ushahidi.ushDisableChecks || USH_DISABLE_CHECKS),
+    verifier = window.ushahidi.verifier = (window.ushahidi.verifier || VERIFIER),
     appStoreId = window.ushahidi.appStoreId = window.ushahidi.appStoreId || '',
     apiUrl = window.ushahidi.apiUrl = backendUrl + '/api/v3',
-    platform_websocket_redis_adapter_url = window.ushahidi.platform_websocket_redis_adapter_url || '',
     claimedAnonymousScopes = [
-        'apikeys',
         'posts',
+        'country_codes',
         'media',
         'forms',
         'api',
@@ -59,8 +59,7 @@ var backendUrl = window.ushahidi.backendUrl = (window.ushahidi.backendUrl || BAC
         'contacts',
         'roles',
         'permissions',
-        'csv',
-        'tos'
+        'csv'
     ];
 
 angular.module('app',
@@ -79,11 +78,12 @@ angular.module('app',
         'nvd3',
         'angular-cache',
         'linkify',
-        'ngRaven',
+        ravenModule,
         'ushahidi.common',
         'ushahidi.main',
         'ushahidi.settings',
-        'ui.bootstrap.dropdown'
+        'ui.bootstrap.dropdown',
+        'ngtweet'
     ])
 
     .constant('CONST', {
@@ -91,16 +91,16 @@ angular.module('app',
         API_URL                  : apiUrl,
         INTERCOM_APP_ID          : intercomAppId,
         APP_STORE_ID             : appStoreId,
+        VERIFIER                 : verifier,
         DEFAULT_LOCALE           : 'en_US',
         OAUTH_CLIENT_ID          : 'ushahidiui',
         OAUTH_CLIENT_SECRET      : '35e7f0bca957836d05ca0492211b0ac707671261',
         CLAIMED_ANONYMOUS_SCOPES : claimedAnonymousScopes,
-        CLAIMED_USER_SCOPES      : claimedAnonymousScopes.concat('dataproviders'),
+        CLAIMED_USER_SCOPES      : ['*'],
         MAPBOX_API_KEY           : window.ushahidi.mapboxApiKey || 'pk.eyJ1IjoidXNoYWhpZGkiLCJhIjoiY2lxaXUzeHBvMDdndmZ0bmVmOWoyMzN6NiJ9.CX56ZmZJv0aUsxvH5huJBw', // Default OSS mapbox api key
+        USH_DISABLE_CHECKS       : ushDisableChecks,
         TOS_RELEASE_DATE         : new Date(window.ushahidi.tosReleaseDate).toJSON() ? new Date(window.ushahidi.tosReleaseDate) : false, // Date in UTC
-        PLATFORM_WEBSOCKET_REDIS_ADAPTER_URL : platform_websocket_redis_adapter_url,
-        EXPORT_POLLING_INTERVAL  : window.ushahidi.export_polling_interval || 30000,
-        EXPORT_POLLING_COUNT     : window.ushahidi.export_polling_count || 50
+        EXPORT_POLLING_INTERVAL  : window.ushahidi.export_polling_interval || 30000
     })
     .config(['$compileProvider', function ($compileProvider) {
         $compileProvider.debugInfoEnabled(false);
@@ -138,35 +138,44 @@ angular.module('app',
         // Load leaflet plugins here too
         require('imports-loader?L=leaflet!leaflet.markercluster');
         require('imports-loader?L=leaflet!leaflet.locatecontrol/src/L.Control.Locate');
+        require('imports-loader?L=leaflet!leaflet-easybutton');
         return L;
     })
     .factory('moment', function () {
         return require('moment');
-    })
-    .factory('io', function () {
-        return require('socket.io-client');
     })
     .factory('BootstrapConfig', ['_', function (_) {
         return window.ushahidi.bootstrapConfig ?
             _.indexBy(window.ushahidi.bootstrapConfig, 'id') :
             { map: {}, site: {}, features: {} };
     }])
+    .factory('Sortable', function () {
+        return require('sortablejs/Sortable');
+    })
+    .factory('Editor', function () {
+        return require('@toast-ui/editor');
+    })
     // inject the router instance into a `run` block by name
-    // .run(['$uiRouter', '$trace', '$location', function ($uiRouter, $trace, $location) {
+    //.run(['$uiRouter', '$trace', '$location', function ($uiRouter, $trace, $location) {
     //     // * uncomment this to enable the visualizer *
     //     let Visualizer = require('@uirouter/visualizer').Visualizer;
     //     let pluginInstance = $uiRouter.plugin(Visualizer);
     //     $trace.enable('TRANSITION');
     // }])
-    .run(['$rootScope', 'LoadingProgress', function ($rootScope, LoadingProgress) {
-        $rootScope.$on('$stateChangeError', console.log.bind(console));
+    .run(['$rootScope', 'LoadingProgress', '$transitions', '$uiRouter', function ($rootScope, LoadingProgress, $transitions, $uiRouter) {
         // this handles the loading-state app-wide
         LoadingProgress.watchTransitions();
+        if (window.ushahidi.gaEnabled) {
+            $transitions.onSuccess({}, function (transition) {
+                window.ga('send', 'pageview',  $uiRouter.urlRouter.location);
+            });
+        }
     }])
-    .run(['$rootScope', function ($rootScope) {
-        $rootScope.$on('$stateChangeError', console.log.bind(console));
-    }])
-    .run(function () {
+    .run(['DemoDeploymentService', function (DemoDeploymentService) {
         angular.element(document.getElementById('bootstrap-app')).removeClass('hidden');
         angular.element(document.getElementById('bootstrap-loading')).addClass('hidden');
-    });
+        DemoDeploymentService.demoCheck();
+    }])
+    .run(['VerifierService', function (VerifierService) {
+        VerifierService.debugModeCheck();
+    }]);

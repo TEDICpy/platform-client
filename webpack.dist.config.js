@@ -1,27 +1,31 @@
 var webpack = require('webpack');
+var UglifyJsPlugin = require('uglifyjs-webpack-plugin');
+var OptimizeCSSAssetsPlugin = require('optimize-css-assets-webpack-plugin');
 var path    = require('path');
 var config  = require('./webpack.config');
 
+config.mode = 'production';
+
 config.output = {
-  filename: '[name].[chunkhash].bundle.js',
-  chunkFilename: '[name].[chunkhash].bundle.js',
+  filename: '[name].[chunkhash].js',
+  chunkFilename: '[name].[chunkhash].js',
   publicPath: '',
-  path: path.resolve(__dirname, 'dist') // Overwritten by gulp
+  path: path.resolve(__dirname, 'server/www') // Overwritten by gulp
 };
 
-config.plugins = config.plugins.concat([
-
-  // Reduces bundles total size
-  new webpack.optimize.UglifyJsPlugin({
-    mangle: {
-
-      // You can specify all variables that should not be mangled.
-      // For example if your vendor dependency doesn't use modules
-      // and relies on global variables. Most of angular modules relies on
-      // angular global variable, so we should keep it unchanged
+config.optimization.minimize = true;
+config.optimization.minimizer = [
+  new UglifyJsPlugin({
+    cache: true,
+    parallel: true,
+    sourceMap: true,
+    uglifyOptions: {
+      mangle: true,
       except: ['$super', '$', 'exports', 'require', 'angular']
     }
-  })
-]);
+  }),
+  new OptimizeCSSAssetsPlugin({})]
+  config.stats = 'none';
+
 
 module.exports = config;

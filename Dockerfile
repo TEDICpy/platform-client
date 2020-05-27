@@ -1,4 +1,4 @@
-FROM ushahidi/node-ci:node-6
+FROM ushahidi/node-ci:node-10-gulp-4
 
 RUN mkdir -p /var/app
 WORKDIR /var/app
@@ -6,7 +6,10 @@ COPY package.json .
 RUN npm-install-silent.sh
 
 COPY . ./
-RUN gulp build
+ARG TX_USERNAME
+ARG TX_PASSWORD
+RUN TX_USERNAME="${TX_USERNAME}" TX_PASSWORD="${TX_PASSWORD}" gulp build
+
 
 FROM nginx
 

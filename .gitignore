@@ -13,7 +13,9 @@ server/www/locales/
 *.aes
 *.swp
 *.swo
+buildargs.env
 deployment.env
+docker.env
 vault.txt
 *.swo
 *.swp
@@ -22,3 +24,4 @@ server/www/img/icons/
 server/www/
 app/locales/
 package-lock.json
+app/stats.html
