@@ -1,7 +1,11 @@
 version: "2"
 services:
   app:
-    build: .
-    env_file: .env
+    build:
+      context: .
+      args:
+        TX_USERNAME: "${TX_USERNAME}"
+        TX_PASSWORD: "${TX_PASSWORD}"
+    env_file: ushahidi.env
     ports:
-      - "7070:8080"
+      - "127.0.0.1:7070:8080"
