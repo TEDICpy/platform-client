@@ -5,12 +5,12 @@ services:
     build: .
     #restart: unless-stopped
     networks:
-      - ushahidiplatform_default
+      - ushahidiplatform-docker_default
     ports:
       - "8080:8080"
     env_file: .env
 
 networks:
-  ushahidiplatform_default:
+  ushahidiplatform-docker_default:
     external: true
 
