@@ -1,4 +1,4 @@
-version: "2"
+version: "2.4"
 services:
   app:
     build:
@@ -6,6 +6,19 @@ services:
       args:
         TX_USERNAME: "${TX_USERNAME}"
         TX_PASSWORD: "${TX_PASSWORD}"
-    env_file: ushahidi.env
+    environment:
+      - NODE_SERVER=${NODE_SERVER}
+      - BACKEND_URL=${BACKEND_URL}
+      - UGLIFY_JS=${UGLIFY_JS}
+      - MOCK_BACKEND=${MOCK_BACKEND}
+      - KARMA_CHROME=${KARMA_CHROME}
+      - APP_LANGUAGES=${APP_LANGUAGES}
     ports:
       - "127.0.0.1:7070:8080"
+    networks:
+      - ushahidiplatform-docker_default
+
+networks:
+  ushahidiplatform-docker_default:
+    external: true
+
