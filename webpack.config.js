@@ -58,19 +58,17 @@ module.exports = {
       {
         test: /\.png/,
         use: {
-          loader: 'url-loader?limit=10000',
+          // loader: 'url-loader?limit=10000'
+          loader: 'file-loader',
           options: {
-            esModule:false
-          }
+            esModule: false,
+          },
         }
       },
       {
         test: /\.svg/,
         use: {
-          loader: 'svg-url-loader?limit=1',
-          options: {
-            esModule: false
-          }
+          loader: 'svg-url-loader?limit=1'
         }
       },
       {
@@ -88,7 +86,8 @@ module.exports = {
           {
             loader: 'file-loader',
             options: {
-              name: 'manifest.json'
+              name: 'manifest.json',
+              esModule: false
             }
           }
         ]
@@ -101,7 +100,11 @@ module.exports = {
       }
     },
   plugins: [
-    new MiniCssExtractPlugin(),
+    new MiniCssExtractPlugin(
+        {
+          filename: '[name].[contenthash].css'
+        }
+    ),
      // Skip locales
      new webpack.IgnorePlugin(/^\.\/locale$/, /moment$/),
      new webpack.DefinePlugin({
